@@ -23,6 +23,8 @@ class ViewController: UIViewController {
     //       One data structure is initialized below for reference.
     var someDataStructure: [String] = [""]
     
+    // A variable that indicates whether the resultLabel needs to be reset.
+    var needToResetResultLabel = true
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,33 +49,101 @@ class ViewController: UIViewController {
     //       Modify this one or create your own.
     func updateSomeDataStructure(_ content: String) {
         print("Update me like one of those PCs")
+        if (content == "*" || content == "/" || content == "-" || content == "+") &&
+            (someDataStructure.last == "*" || someDataStructure.last == "/" || someDataStructure.last == "-" || someDataStructure.last == "+") {
+            someDataStructure.removeLast()
+        }
+        if let emptyStringLocation = someDataStructure.index(of: "") {
+            someDataStructure.remove(at: emptyStringLocation)
+            
+        }
+        someDataStructure.append(content)
+    }
+    
+    func wipeMemoryClean() {
+        someDataStructure = []
     }
     
     // TODO: Ensure that resultLabel gets updated.
     //       Modify this one or create your own.
     func updateResultLabel(_ content: String) {
         print("Update me like one of those PCs")
+        let isAlreadyDecimal = resultLabel.text!.contains(".")
+        let isImplementingDecimal = content.contains(".")
+        if NSString.init(string: resultLabel.text!).length == 7 && !needToResetResultLabel {
+            return
+        }
+        if isAlreadyDecimal && isImplementingDecimal && !needToResetResultLabel {
+            return
+        }
+        if needToResetResultLabel {
+            resultLabel.text = content
+            needToResetResultLabel = false
+        } else {
+            resultLabel.text! += content
+        }
+        
     }
     
     
     // TODO: A calculate method with no parameters, scary!
     //       Modify this one or create your own.
     func calculate() -> String {
-        return "0"
+        if someDataStructure.count <= 1 {
+            return resultLabel.text!
+        }
+        updateSomeDataStructure(resultLabel.text!)
+        let firstParameter = someDataStructure.removeFirst()
+        let binaryOperator = someDataStructure.removeFirst()
+        let secondParameter = someDataStructure.removeFirst()
+        var result = "\(calculate(a: firstParameter, b: secondParameter, operation: binaryOperator))"
+        
+        if result.hasSuffix(".0") {
+            let resultArray = result.components(separatedBy: ".")
+            result = resultArray[0]
+        }
+        return result
     }
     
     // TODO: A simple calculate method for integers.
     //       Modify this one or create your own.
     func intCalculate(a: Int, b:Int, operation: String) -> Int {
         print("Calculation requested for \(a) \(operation) \(b)")
+        switch operation {
+            case "/":
+                return a / b
+            case "*":
+                return a * b
+            case "+":
+                return a + b
+            case "-":
+                return a - b
+        default: break
+        }
         return 0
     }
     
     // TODO: A general calculate method for doubles
     //       Modify this one or create your own.
     func calculate(a: String, b:String, operation: String) -> Double {
+        
         print("Calculation requested for \(a) \(operation) \(b)")
-        return 0.0
+        if let m = Double.init(a) {
+            if let n = Double.init(b) {
+                switch operation {
+                case "/":
+                    return m / n
+                case "*":
+                    return m * n
+                case "+":
+                    return m + n
+                case "-":
+                    return m - n
+                default: break
+                }
+            }
+        }
+        return 0
     }
     
     // REQUIRED: The responder to a number button being pressed.
@@ -81,16 +151,80 @@ class ViewController: UIViewController {
         guard Int(sender.content) != nil else { return }
         print("The number \(sender.content) was pressed")
         // Fill me in!
+        updateResultLabel(sender.content)
     }
     
     // REQUIRED: The responder to an operator button being pressed.
     func operatorPressed(_ sender: CustomButton) {
         // Fill me in!
+        switch sender.content {
+            case "C":
+                needToResetResultLabel = true
+                updateResultLabel("0")
+                needToResetResultLabel = true
+            case "+/-":
+                let isNegative = resultLabel.text!.contains("-")
+                let isZero = resultLabel.text! == "0"
+                if isNegative && !isZero {
+                    resultLabel.text!.remove(at: resultLabel.text!.startIndex)
+                } else if !isNegative && !isZero {
+                    needToResetResultLabel = true
+                    updateResultLabel("-" + resultLabel.text!)
+                }
+            case "%":
+                updateSomeDataStructure(resultLabel.text!)
+                updateSomeDataStructure("%")
+                needToResetResultLabel = true
+            case "/":
+                binaryOperatorPressed(operation: "/")
+            case "*":
+                binaryOperatorPressed(operation: "*")
+            case "-":
+                binaryOperatorPressed(operation: "-")
+            case "+":
+                binaryOperatorPressed(operation: "+")
+            case "=":
+                pressEnter()
+        default: break
+        }
+        
+        print("Operator \(sender.content) was pressed. Current data structure is \(someDataStructure)")
+    }
+    
+    private var isPrevOperationEnter = false
+    private func binaryOperatorPressed(operation op: String) {
+        if needToResetResultLabel && !isPrevOperationEnter {
+            updateSomeDataStructure(op)
+            return
+        }
+        pressEnter()
+        isPrevOperationEnter = false
+        updateSomeDataStructure(resultLabel.text!)
+        updateSomeDataStructure(op)
+        needToResetResultLabel = true
+    }
+    
+    private func pressEnter() {
+        needToResetResultLabel = true
+        updateResultLabel(calculate())
+        needToResetResultLabel = true
+        isPrevOperationEnter = true
     }
     
     // REQUIRED: The responder to a number or operator button being pressed.
     func buttonPressed(_ sender: CustomButton) {
        // Fill me in!
+        print("Button \(sender.content) was pressed")
+        switch sender.content {
+            case "0":
+                updateResultLabel("0")
+            case ".":
+                if resultLabel.text! == "0" {
+                    needToResetResultLabel = false
+                }
+                updateResultLabel(".")
+        default: break
+        }
     }
     
     // IMPORTANT: Do NOT change any of the code below.
