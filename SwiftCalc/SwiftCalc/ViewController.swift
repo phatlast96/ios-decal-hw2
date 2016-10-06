@@ -172,9 +172,17 @@ class ViewController: UIViewController {
                     updateResultLabel("-" + resultLabel.text!)
                 }
             case "%":
-                updateSomeDataStructure(resultLabel.text!)
-                updateSomeDataStructure("%")
-                needToResetResultLabel = true
+                var textDisplayed = resultLabel.text!
+                if textDisplayed.characters.count == 1 && !textDisplayed.contains("-") && textDisplayed != "0" {
+                    resultLabel.text = "0.0" + textDisplayed
+                } else if textDisplayed.characters.count == 2 && !textDisplayed.contains("-") {
+                    resultLabel.text = "0." + textDisplayed
+                } else {
+                    let decimalPosition = textDisplayed.index(textDisplayed.endIndex, offsetBy: -2)
+                    resultLabel.text!.characters.insert(".", at: decimalPosition)
+                }
+                
+                pressEnter()
             case "/":
                 binaryOperatorPressed(operation: "/")
             case "*":
